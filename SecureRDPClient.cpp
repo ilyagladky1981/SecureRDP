@@ -1,20 +1,117 @@
-﻿//
-
+﻿
 #include <iostream>
+#include <WinSock2.h>
+#include <WS2tcpip.h>
+#include <inaddr.h>
+#include <stdio.h>
+#include <vector>
 
-int main()
+#pragma comment(lib, "ws2_32.lib")
+
+using namespace std;
+
+
+int main(void)
 {
-    std::cout << "Hello World!\n";
+	//Key constants
+	const char SERVER_IP[] = "127.0.0.1";					// Enter IPv4 address of Server
+	const short SERVER_PORT_NUM = 0;				// Enter Listening port on Server side
+	const short BUFF_SIZE = 1024;					// Maximum size of buffer for exchange info between server and client
 
+	
+	int errorStatus;										
+
+	
+	in_addr ip_to_num;
+	inet_pton(AF_INET, SERVER_IP, &ip_to_num);
+
+
+	
+	WSADATA wsData;
+	errorStatus = WSAStartup(MAKEWORD(2, 2), &wsData);
+
+	if (errorStatus != 0) {
+		cout << "Error WinSock version initializaion #";
+		cout << WSAGetLastError();
+		return 1;
+	}
+	else
+		cout << "WinSock initialization is OK" << endl;
+
+	
+	SOCKET ClientSock = socket(AF_INET, SOCK_STREAM, 0);
+
+	if (ClientSock == INVALID_SOCKET) {
+		cout << "Error initialization socket # " << WSAGetLastError() << endl;
+		closesocket(ClientSock);
+		WSACleanup();
+	}
+	else
+		cout << "Client socket initialization is OK" << endl;
+
+	
+	sockaddr_in servInfo;
+
+	ZeroMemory(&servInfo, sizeof(servInfo));
+
+	servInfo.sin_family = AF_INET;
+	servInfo.sin_addr = ip_to_num;
+	servInfo.sin_port = htons(SERVER_PORT_NUM);
+
+	errorStatus = connect(ClientSock, (sockaddr*)&servInfo, sizeof(servInfo));
+
+	if (errorStatus != 0) {
+		cout << "Connection to Server is FAILED. Error # " << WSAGetLastError() << endl;
+		closesocket(ClientSock);
+		WSACleanup();
+		return 1;
+	}
+	else
+		cout << "Connection established SUCCESSFULLY. Ready to send a message to Server" << endl;
+
+
+	
+
+	vector <char> servBuff(BUFF_SIZE), clientBuff(BUFF_SIZE);							// Buffers for sending and receiving data
+	short packet_size = 0;												// The size of sending / receiving packet in bytes
+
+	while (true) {
+
+		cout << "Your (Client) message to Server: ";
+		fgets(clientBuff.data(), clientBuff.size(), stdin);
+
+		
+		if (clientBuff[0] == 'x' && clientBuff[1] == 'x' && clientBuff[2] == 'x') {
+			shutdown(ClientSock, SD_BOTH);
+			closesocket(ClientSock);
+			WSACleanup();
+			return 0;
+		}
+
+		packet_size = send(ClientSock, clientBuff.data(), clientBuff.size(), 0);
+
+		if (packet_size == SOCKET_ERROR) {
+			cout << "Can't send message to Server. Error # " << WSAGetLastError() << endl;
+			closesocket(ClientSock);
+			WSACleanup();
+			return 1;
+		}
+
+		packet_size = recv(ClientSock, servBuff.data(), servBuff.size(), 0);
+
+		if (packet_size == SOCKET_ERROR) {
+			cout << "Can't receive message from Server. Error # " << WSAGetLastError() << endl;
+			closesocket(ClientSock);
+			WSACleanup();
+			return 1;
+		}
+		else
+			cout << "Server message: " << servBuff.data() << endl;
+
+	}
+
+	closesocket(ClientSock);
+	WSACleanup();
+
+	return 0;
 }
-
-// Запуск программы: CTRL+F5 или меню "Отладка" > "Запуск без отладки"
-// Отладка программы: F5 или меню "Отладка" > "Запустить отладку"
-
-// Советы по началу работы 
-//   1. В окне обозревателя решений можно добавлять файлы и управлять ими.
-//   2. В окне Team Explorer можно подключиться к системе управления версиями.
-//   3. В окне "Выходные данные" можно просматривать выходные данные сборки и другие сообщения.
-//   4. В окне "Список ошибок" можно просматривать ошибки.
-//   5. Последовательно выберите пункты меню "Проект" > "Добавить новый элемент", чтобы создать файлы кода, или "Проект" > "Добавить существующий элемент", чтобы добавить в проект существующие файлы кода.
-//   6. Чтобы снова открыть этот проект позже, выберите пункты меню "Файл" > "Открыть" > "Проект" и выберите SLN-файл.

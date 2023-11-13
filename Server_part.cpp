@@ -16,17 +16,17 @@ int main(void)
 	
 	//Key constants
 	const char IP_SERV[] = "127.0.0.1";			// Enter local Server IP address
-	const int PORT_NUM = 0;				// Enter Open working server port
-	const short BUFF_SIZE = 1024;			// Maximum size of buffer for exchange info between server and client
+	const int PORT_NUM = 0;				        // Enter Open working server port
+	const short BUFF_SIZE = 1024;			
 
-	// Key variables for all program
-	int erStat;								// Keeps socket errors status
-
-	//IP in string format to numeric format for socket functions. Data is in "ip_to_num"
-	in_addr ip_to_num;
-	erStat = inet_pton(AF_INET, IP_SERV, &ip_to_num);
 	
-	if (erStat <= 0) {
+	int errorStatus;								
+
+	
+	in_addr ip_to_num;
+	errorStatus = inet_pton(AF_INET, IP_SERV, &ip_to_num);
+	
+	if (errorStatus <= 0) {
 		cout << "Error in IP translation to special numeric format" << endl;
 		return 1;
 	}
@@ -35,9 +35,9 @@ int main(void)
 	// WinSock initialization
 	WSADATA wsData;
 		
-	erStat = WSAStartup(MAKEWORD(2,2), &wsData);
+	errorStatus = WSAStartup(MAKEWORD(2,2), &wsData);
 	
-	if ( erStat != 0 ) {
+	if (errorStatus != 0 ) {
 		cout << "Error WinSock version initializaion #";
 		cout << WSAGetLastError();
 		return 1;
